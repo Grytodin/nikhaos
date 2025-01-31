@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
 module.exports = {
   name: "snake",
@@ -7,12 +7,8 @@ module.exports = {
   category: "FUN",
   botPermissions: ["SendMessages", "EmbedLinks", "ReadMessageHistory"],
 
-  command: {
-    enabled: true,
-  },
-  slashCommand: {
-    enabled: true,
-  },
+  command: { enabled: true },
+  slashCommand: { enabled: true },
 
   async messageRun(message) {
     await startSnakeGame(message);
@@ -25,12 +21,12 @@ module.exports = {
 
 async function startSnakeGame(data) {
   const gridSize = 7; // Розмір поля
-  let snake = [{ x: 3, y: 3 }]; // Початкова позиція змійки
+  let snake = [{ x: 3, y: 3 }]; // Початкова позиція
   let direction = "RIGHT"; // Початковий напрямок
   let food = getRandomFood(); // Їжа
   let gameOver = false;
 
-  const controls = new ActionRowBuilder().addComponents(
+  const controls = () => new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId("UP").setLabel("⬆").setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId("LEFT").setLabel("⬅").setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId("DOWN").setLabel("⬇").setStyle(ButtonStyle.Primary),
@@ -38,22 +34,26 @@ async function startSnakeGame(data) {
   );
 
   let embed = createEmbed();
-  let message = await data.reply({ embeds: [embed], components: [controls] });
+  let message = await data.reply({ embeds: [embed], components: [controls()] });
 
   const collector = message.createMessageComponentCollector({ time: 60000 });
 
   collector.on("collect", async (interaction) => {
     if (gameOver) return;
-    if (interaction.user.id !== data.author.id) return interaction.reply({ content: "Це не твоя гра!", ephemeral: true });
+    if (interaction.user.id !== data.author.id) {
+      return interaction.reply({ content: "Це не твоя гра!", ephemeral: true });
+    }
 
-    direction = interaction.customId; // Змінюємо напрямок
+    direction = interaction.customId; // Оновлюємо напрямок
 
     moveSnake();
     if (gameOver) {
       collector.stop();
+      embed = createEmbed(true);
+      await interaction.update({ embeds: [embed], components: [] });
     } else {
       embed = createEmbed();
-      await interaction.update({ embeds: [embed], components: [controls] });
+      await interaction.update({ embeds: [embed], components: [controls()] });
     }
   });
 
@@ -94,7 +94,7 @@ async function startSnakeGame(data) {
     return newFood;
   }
 
-  function createEmbed() {
+  function createEmbed(isGameOver = false) {
     let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill("⬛"));
     snake.forEach(segment => (grid[segment.y][segment.x] = "🟩"));
     grid[food.y][food.x] = "🍎";
@@ -102,7 +102,7 @@ async function startSnakeGame(data) {
     return new EmbedBuilder()
       .setTitle("🐍 Snake Game")
       .setDescription(grid.map(row => row.join("")).join("\n"))
-      .setColor("Green")
-      .setFooter({ text: gameOver ? "Game Over!" : "Use buttons to move!" });
+      .setColor(isGameOver ? "Red" : "Green")
+      .setFooter({ text: isGameOver ? "Game Over!" : "Use buttons to move!" });
   }
 }
