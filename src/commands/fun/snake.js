@@ -11,15 +11,15 @@ module.exports = {
   slashCommand: { enabled: true },
 
   async messageRun(message) {
-    await startSnakeGame(message);
+    await startSnakeGame(message, false);
   },
 
   async interactionRun(interaction) {
-    await startSnakeGame(interaction);
+    await startSnakeGame(interaction, true);
   },
 };
 
-async function startSnakeGame(data) {
+async function startSnakeGame(data, isSlash) {
   const gridSize = 7; // Розмір поля
   let snake = [{ x: 3, y: 3 }]; // Початкова позиція
   let direction = "RIGHT"; // Початковий напрямок
@@ -34,13 +34,19 @@ async function startSnakeGame(data) {
   );
 
   let embed = createEmbed();
-  let message = await data.reply({ embeds: [embed], components: [controls()] });
+  let message;
+
+  if (isSlash) {
+    message = await data.followUp({ embeds: [embed], components: [controls()] });
+  } else {
+    message = await data.reply({ embeds: [embed], components: [controls()] });
+  }
 
   const collector = message.createMessageComponentCollector({ time: 60000 });
 
   collector.on("collect", async (interaction) => {
     if (gameOver) return;
-    if (interaction.user.id !== data.author.id) {
+    if (interaction.user.id !== data.user?.id && interaction.user.id !== data.author?.id) {
       return interaction.reply({ content: "Це не твоя гра!", ephemeral: true });
     }
 
