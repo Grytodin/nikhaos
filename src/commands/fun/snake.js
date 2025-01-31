@@ -1,44 +1,15 @@
-const { Snake } = require("discord-gamecord");
+const SnakeGame = require("snakecord");
 
-module.exports = {
-  name: "snake",
-  description: "Play a snake game using buttons",
-  cooldown: 10,
-  category: "FUN",
-  botPermissions: ["SendMessages", "EmbedLinks", "ReadMessageHistory"],
+/**
 
-  command: { enabled: true },
-  slashCommand: { enabled: true },
+@type {import("@structures/Command")} */ module.exports = { name: "snake", description: "play snake game on discord", cooldown: 10, category: "FUN", botPermissions: ["SendMessages", "EmbedLinks", "AddReactions", "ReadMessageHistory", "ManageMessages"], command: { enabled: true, }, slashCommand: { enabled: true, },
 
-  async messageRun(message) {
-    await startSnakeGame(message);
-  },
 
-  async interactionRun(interaction) {
-    await startSnakeGame(interaction);
-  },
-};
+async messageRun(message, args) { await message.safeReply("Starting Snake Game"); await startSnakeGame(message); },
 
-async function startSnakeGame(interaction) {
-  const game = new Snake({
-    message: interaction,
-    embed: {
-      title: "🐍 Snake Game",
-      color: "#00FF00",
-      overTitle: "Game Over!",
-    },
-    emojis: {
-      board: "⬛",
-      food: "🍎",
-      up: "⬆",
-      down: "⬇",
-      left: "⬅",
-      right: "➡",
-    },
-    stopButton: "Stop",
-    timeoutTime: 60000,
-    playerOnlyMessage: "Ти не можеш грати за іншу людину!",
-  });
+async interactionRun(interaction) { await interaction.followUp("Starting Snake Game"); await startSnakeGame(interaction); }, };
 
-  await game.startGame();
-}
+async function startSnakeGame(data) { const snakeGame = new SnakeGame({ title: "Snake Game", color: "BLUE", timestamp: true, gameOverTitle: "Game Over", });
+
+await snakeGame.newGame(data); } Зробиш з цього?
+
