@@ -11,5 +11,5 @@ async interactionRun(interaction) { await interaction.followUp("Starting Snake G
 
 async function startSnakeGame(data) { const snakeGame = new SnakeGame({ title: "Snake Game", color: "BLUE", timestamp: true, gameOverTitle: "Game Over", });
 
-await snakeGame.newGame(data); } Зробиш з цього?
+await snakeGame.newGame(data); }
 
