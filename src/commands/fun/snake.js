@@ -1,31 +1,15 @@
-const { SnakeGame } = require("@majoexe/games");
+const SnakeGame = require("snakecord");
 
-module.exports = {
-  name: "snake",
-  description: "Play a snake game using buttons",
-  cooldown: 10,
-  category: "FUN",
-  botPermissions: ["SendMessages", "EmbedLinks", "ReadMessageHistory"],
+/**
 
-  async messageRun(message) {
-    const game = new SnakeGame({
-      message: message,
-      embedTitle: "🐍 Snake Game",
-      embedColor: "Green",
-      buttonStyle: "PRIMARY",
-    });
+@type {import("@structures/Command")} */ module.exports = { name: "snake", description: "play snake game on discord", cooldown: 10, category: "FUN", botPermissions: ["SendMessages", "EmbedLinks", "AddReactions", "ReadMessageHistory", "ManageMessages"], command: { enabled: true, }, slashCommand: { enabled: true, },
 
-    await game.startGame();
-  },
 
-  async interactionRun(interaction) {
-    const game = new SnakeGame({
-      message: interaction,
-      embedTitle: "🐍 Snake Game",
-      embedColor: "Green",
-      buttonStyle: "PRIMARY",
-    });
+async messageRun(message, args) { await message.safeReply("Starting Snake Game"); await startSnakeGame(message); },
 
-    await game.startGame();
-  },
-};
+async interactionRun(interaction) { await interaction.followUp("Starting Snake Game"); await startSnakeGame(interaction); }, };
+
+async function startSnakeGame(data) { const snakeGame = new SnakeGame({ title: "Snake Game", color: "BLUE", timestamp: true, gameOverTitle: "Game Over", });
+
+await snakeGame.newGame(data); } Зробиш з цього?
+
