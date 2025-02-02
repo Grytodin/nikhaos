@@ -36,18 +36,19 @@ async function startSnakeGame(data, isInteraction) {
   });
 
   try {
-    // Запуск гри
-    const gameResult = await snakeGame.newGame(data); // Передаємо безпосередньо Interaction або Message
+    const gameResult = await snakeGame.newGame(data); // Запуск гри
 
-    // Відправлення результату
-    const resultMessage = `**Game Over!**\n**Player:** ${isInteraction ? data.user.tag : data.author.tag}\n**Score:** ${gameResult.score}`;
-    await data.channel.send(resultMessage);
+    if (gameResult && gameResult.score !== undefined) {
+      const resultMessage = `**Game Over!**\n**Player:** ${isInteraction ? data.user.tag : data.author.tag}\n**Score:** ${gameResult.score}`;
+      await data.channel.send(resultMessage);
+    } else {
+      console.error("Game result is undefined or missing score:", gameResult);
+      await data.channel.send("An error occurred while retrieving the game result.");
+    }
   } catch (error) {
     console.error("Error starting snake game:", error);
-
-    // Повідомлення про помилку
     if (isInteraction) {
-      await data.reply({ content: "An error occurred while starting the Snake Game. Please try again.", ephemeral: true });
+      await data.followUp({ content: "An error occurred while starting the Snake Game. Please try again.", ephemeral: true });
     } else {
       await data.reply("An error occurred while starting the Snake Game. Please try again.");
     }
