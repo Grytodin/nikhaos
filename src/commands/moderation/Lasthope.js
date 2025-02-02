@@ -1,7 +1,7 @@
 const { PermissionsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = {
-  name: 'Ban',
+  name: 'ban',
   description: 'Забанити користувача з доступом лише до спеціального каналу.',
   async execute(message, args) {
     // Перевірка прав
