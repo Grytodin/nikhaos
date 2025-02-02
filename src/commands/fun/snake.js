@@ -22,7 +22,7 @@ module.exports = {
   },
 
   async interactionRun(interaction) {
-    await interaction.reply({ content: "**Starting Snake Game** (only you can see it)", ephemeral: true });
+    await interaction.reply({ content: "", ephemeral: true });
     await startSnakeGame(interaction, true);
   },
 };
