@@ -50,21 +50,23 @@ module.exports = {
 
 const genReaction = async (category, user) => {
   try {
-    const giphyApiKey = "zcAQjzmb4P8WB3MmTy9nSLQwstUvfyGj"; // Заміни на свій API-ключ Giphy
-    const query = category || "happy"; // Якщо немає категорії, використовуємо "happy" за замовчуванням
+    const tenorApiKey = "AIzaSyAcAMBkm9DvIcxxwwfQ3TMDHnX-URmjTME"; // Замініть на ваш API-ключ Tenor
+    const query = category || "happy"; 
 
-    // Запит до Giphy API для отримання гіфки
-    const response = await axios.get(`https://api.giphy.com/v1/gifs/search`, {
+    const response = await axios.get(`https://tenor.googleapis.com/v2/search`, {
       params: {
-        api_key: giphyApiKey,
+        key: tenorApiKey,
         q: query,
-        limit: 1, // Забезпечуємо отримання лише одного результату
+        limit: 10, // Отримуємо 10 результатів для унікальності
+        media_filter: "minimal",
       },
     });
 
-    if (response.data.data.length === 0) throw new Error("No results found");
+    if (!response.data.results.length) throw new Error("No results found");
 
-    const imageUrl = response.data.data[0].images.original.url;
+    // Вибираємо випадковий GIF, щоб уникнути повторень
+    const randomIndex = Math.floor(Math.random() * response.data.results.length);
+    const imageUrl = response.data.results[randomIndex].media_formats.gif.url;
 
     return new EmbedBuilder()
       .setImage(imageUrl)
