@@ -1,19 +1,26 @@
+const { EmbedBuilder } = require('discord.js'); // Убедитесь, что EmbedBuilder импортирован
+
 async function handleRuletMute(context, time) {
   const validTimes = { "10m": 600000, "30m": 1800000, "1h": 3600000 };
   if (!validTimes[time]) {
     return context.reply("❌ Неправильный формат времени. Используйте: 10m, 30m или 1h.");
   }
+
   let isInteraction = context.isChatInputCommand?.(); // Проверяем, является ли это слеш-командой
-  if (isInteraction) await context.deferReply(); // Откладываем ответ
+  if (isInteraction) await context.deferReply(); // Откладываем ответ для слеш-команд
+
   let remainingTime = 600; // 10 минут (600 секунд)
   const embed = new EmbedBuilder()
     .setTitle("🎰 Русская рулетка на мут")
     .setDescription(`Нажмите 👍, чтобы участвовать!\n\n⏳ Осталось: **${remainingTime / 60} мин**`)
     .setColor("Yellow");
+
   const msg = isInteraction
     ? await context.editReply({ embeds: [embed] }) // Для слеш-команд
     : await context.reply({ embeds: [embed], fetchReply: true }); // Для обычных команд
-  await msg.react("👍");
+
+  await msg.react("👍"); // Добавляем реакцию
+
   // Таймер обновления каждую 30 секунд
   const timerInterval = setInterval(async () => {
     remainingTime -= 30;
@@ -24,17 +31,21 @@ async function handleRuletMute(context, time) {
     embed.setDescription(`Нажмите 👍, чтобы участвовать!\n\n⏳ Осталось: **${Math.ceil(remainingTime / 60)} мин**`);
     await msg.edit({ embeds: [embed] });
   }, 30000);
+
   // Выбор случайного участника через 10 минут
   setTimeout(async () => {
-    clearInterval(timerInterval);
+    clearInterval(timerInterval); // Останавливаем таймер
     const reaction = msg.reactions.cache.get("👍");
     if (!reaction) return context.channel.send("❌ Никто не принял участие.");
+
     const usersReacted = await reaction.users.fetch();
     const participants = usersReacted.filter((user) => !user.bot).map((user) => user.id);
     if (participants.length === 0) return context.channel.send("❌ Никто не принял участие.");
+
     const winnerId = participants[Math.floor(Math.random() * participants.length)];
     const member = context.guild.members.cache.get(winnerId);
     if (!member) return context.channel.send("❌ Не удалось найти участника.");
+
     try {
       await member.timeout(validTimes[time], `Рулетка на мут (${time})`);
       embed
