@@ -42,6 +42,7 @@ async function startSnakeGame(data, isInteraction) {
     let food = spawnFood(board, snake);
     let direction = DIRECTIONS.right;
     let gameOver = false;
+    let movesSinceLastUpdate = 0; // Лічильник для обмеження оновлень
 
     function updateBoard() {
         board = createBoard();
@@ -63,11 +64,14 @@ async function startSnakeGame(data, isInteraction) {
         snake.unshift(newHead);
         if (newHead.x === food.x && newHead.y === food.y) {
             food = spawnFood(board, snake);
+            movesSinceLastUpdate = 0; // Скидаємо лічильник після з'їдання
         } else {
             snake.pop();
         }
 
         updateBoard();
+        movesSinceLastUpdate++;
+
         return renderBoard(board);
     }
 
@@ -82,7 +86,7 @@ async function startSnakeGame(data, isInteraction) {
             return interaction.reply({ content: "This is not your game!", ephemeral: true });
         }
 
-        await interaction.deferUpdate(); // Швидше реагує на натискання
+        await interaction.deferUpdate(); // Швидша реакція на натискання кнопки
 
         direction = DIRECTIONS[interaction.customId];
         let result = moveSnake();
@@ -92,7 +96,11 @@ async function startSnakeGame(data, isInteraction) {
             return interaction.editReply({ embeds: [embed.setDescription('Game Over!')], components: [] });
         }
 
-        interaction.editReply({ embeds: [embed.setDescription(result)] }).catch(() => {});
+        // Оновлюємо повідомлення тільки якщо минуло 5 ходів або змійка з'їла яблуко
+        if (movesSinceLastUpdate >= 5 || result.includes('🍎')) {
+            movesSinceLastUpdate = 0;
+            interaction.editReply({ embeds: [embed.setDescription(result)] }).catch(() => {});
+        }
     });
 
     collector.on('end', () => {
@@ -113,4 +121,3 @@ function createButtons() {
         new ButtonBuilder().setCustomId('right').setEmoji('➡️').setStyle(ButtonStyle.Primary)
     );
 }
-
