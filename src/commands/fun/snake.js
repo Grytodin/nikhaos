@@ -1,25 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 
-module.exports = {
-  name: "snake",
-  description: "Play Snake game on Discord",
-  cooldown: 10,
-  category: "FUN",
-  botPermissions: ["SendMessages", "EmbedLinks", "AddReactions", "ReadMessageHistory", "ManageMessages"],
-  command: { enabled: true },
-  slashCommand: { enabled: true },
-
-  async messageRun(message) {
-    await message.safeReply("**Starting Snake Game** (only you can see it)");
-    await startSnakeGame(message, false);
-  },
-
-  async interactionRun(interaction) {
-    await interaction.reply({ content: "", ephemeral: true });
-    await startSnakeGame(interaction, true);
-  },
-};
-
 const GAME_SIZE = { rows: 12, cols: 15 };
 const DIRECTIONS = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 
@@ -120,3 +100,23 @@ function createButtons() {
         new ButtonBuilder().setCustomId('right').setEmoji('➡️').setStyle(ButtonStyle.Primary)
     );
 }
+
+module.exports = {
+  name: "snake",
+  description: "Play Snake game on Discord",
+  cooldown: 10,
+  category: "FUN",
+  botPermissions: ["SendMessages", "EmbedLinks", "AddReactions", "ReadMessageHistory", "ManageMessages"],
+  command: { enabled: true },
+  slashCommand: { enabled: true },
+
+  async messageRun(message) {
+    await message.safeReply("**Starting Snake Game** (only you can see it)");
+    await startSnakeGame(message, false);
+  },
+
+  async interactionRun(interaction) {
+    await interaction.reply({ content: "", ephemeral: true });
+    await startSnakeGame(interaction, true);
+  },
+};
