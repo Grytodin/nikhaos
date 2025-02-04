@@ -75,7 +75,7 @@ async function startSnakeGame(data, isInteraction) {
     let embed = new EmbedBuilder().setTitle("Snake Game").setDescription(renderBoard(board));
     let msg = await data.channel.send({ embeds: [embed], components: [createButtons()] });
 
-    let collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
+    let collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 300000 });
 
     collector.on('collect', async interaction => {
         if (interaction.user.id !== (isInteraction ? data.user.id : data.author.id)) {
