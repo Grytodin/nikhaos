@@ -82,15 +82,17 @@ async function startSnakeGame(data, isInteraction) {
             return interaction.reply({ content: "This is not your game!", ephemeral: true });
         }
 
+        await interaction.deferUpdate(); // Швидше реагує на натискання
+
         direction = DIRECTIONS[interaction.customId];
         let result = moveSnake();
 
         if (result === "gameover") {
             collector.stop();
-            return interaction.update({ embeds: [embed.setDescription('Game Over!')], components: [] });
+            return interaction.editReply({ embeds: [embed.setDescription('Game Over!')], components: [] });
         }
 
-        await interaction.update({ embeds: [embed.setDescription(result)] });
+        interaction.editReply({ embeds: [embed.setDescription(result)] }).catch(() => {});
     });
 
     collector.on('end', () => {
@@ -111,3 +113,4 @@ function createButtons() {
         new ButtonBuilder().setCustomId('right').setEmoji('➡️').setStyle(ButtonStyle.Primary)
     );
 }
+
