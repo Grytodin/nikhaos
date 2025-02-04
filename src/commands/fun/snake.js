@@ -6,12 +6,8 @@ module.exports = {
   cooldown: 10,
   category: "FUN",
   botPermissions: ["SendMessages", "EmbedLinks", "AddReactions", "ReadMessageHistory", "ManageMessages"],
-  command: {
-    enabled: true,
-  },
-  slashCommand: {
-    enabled: true,
-  },
+  command: { enabled: true },
+  slashCommand: { enabled: true },
 
   async messageRun(message) {
     await message.safeReply("**Starting Snake Game** (only you can see it)");
@@ -28,7 +24,7 @@ const GAME_SIZE = { rows: 12, cols: 15 };
 const DIRECTIONS = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 
 function createBoard() {
-    return Array.from({ length: GAME_SIZE.rows }, () => Array(GAME_SIZE.cols).fill('🟦'));  // Замінив '🔵' на '🟦'
+    return Array.from({ length: GAME_SIZE.rows }, () => Array(GAME_SIZE.cols).fill('🟦'));
 }
 
 function spawnFood(board, snake) {
@@ -36,7 +32,7 @@ function spawnFood(board, snake) {
     do {
         x = Math.floor(Math.random() * GAME_SIZE.cols);
         y = Math.floor(Math.random() * GAME_SIZE.rows);
-    } while (board[y][x] !== '🟦' || snake.some(segment => segment.x === x && segment.y === y));
+    } while (snake.some(segment => segment.x === x && segment.y === y));
     return { x, y };
 }
 
@@ -45,40 +41,61 @@ async function startSnakeGame(data, isInteraction) {
     let snake = [{ x: 7, y: 6 }];
     let food = spawnFood(board, snake);
     let direction = DIRECTIONS.right;
-    
+    let gameOver = false;
+
     function updateBoard() {
         board = createBoard();
         snake.forEach(segment => board[segment.y][segment.x] = '🟩');
-        board[snake[0].y][snake[0].x] = '🟢'; // Голова змії
+        board[snake[0].y][snake[0].x] = '🟢';
         board[food.y][food.x] = '🍎';
     }
-    
-    updateBoard();
-    let embed = new EmbedBuilder().setTitle("Snake Game").setDescription(renderBoard(board));
-    let msg = await data.channel.send({ embeds: [embed], components: [createButtons()] });
 
-    let collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
-    collector.on('collect', async interaction => {
-        if (interaction.user.id !== (isInteraction ? data.user.id : data.author.id)) {
-            return interaction.reply({ content: "This is not your game!", ephemeral: true });
-        }
-        direction = DIRECTIONS[interaction.customId];
-        
+    function moveSnake() {
+        if (gameOver) return;
         let newHead = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
         if (newHead.x < 0 || newHead.x >= GAME_SIZE.cols || newHead.y < 0 || newHead.y >= GAME_SIZE.rows ||
             snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
-            collector.stop('gameover');
-            return interaction.update({ embeds: [embed.setDescription('Game Over!')], components: [] });
+            gameOver = true;
+            return "gameover";
         }
+
         snake.unshift(newHead);
         if (newHead.x === food.x && newHead.y === food.y) {
             food = spawnFood(board, snake);
         } else {
             snake.pop();
         }
+
         updateBoard();
-        embed.setDescription(renderBoard(board));
-        await interaction.update({ embeds: [embed] });
+        return renderBoard(board);
+    }
+
+    updateBoard();
+    let embed = new EmbedBuilder().setTitle("Snake Game").setDescription(renderBoard(board));
+    let msg = await data.channel.send({ embeds: [embed], components: [createButtons()] });
+
+    let collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
+
+    collector.on('collect', async interaction => {
+        if (interaction.user.id !== (isInteraction ? data.user.id : data.author.id)) {
+            return interaction.reply({ content: "This is not your game!", ephemeral: true });
+        }
+
+        direction = DIRECTIONS[interaction.customId];
+        let result = moveSnake();
+
+        if (result === "gameover") {
+            collector.stop();
+            return interaction.update({ embeds: [embed.setDescription('Game Over!')], components: [] });
+        }
+
+        await interaction.update({ embeds: [embed.setDescription(result)] });
+    });
+
+    collector.on('end', () => {
+        gameOver = true;
+        msg.edit({ components: [] }).catch(() => {});
     });
 }
 
