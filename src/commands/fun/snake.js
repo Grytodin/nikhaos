@@ -111,7 +111,7 @@ module.exports = {
   slashCommand: { enabled: true },
 
   async messageRun(message) {
-    await message.safeReply("**Starting Snake Game** (only you can see it)");
+    await message.safeReply("**Starting Snake Game**");
     await startSnakeGame(message, false);
   },
 
