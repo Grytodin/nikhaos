@@ -63,7 +63,7 @@ async function startSnakeGame(data, isInteraction) {
 
     collector.on('collect', async interaction => {
         if (interaction.user.id !== (isInteraction ? data.user.id : data.author.id)) {
-            return interaction.reply({ content: "This is not your game!", ephemeral: true });
+            return interaction.reply({ content: "Это не ваша игра!", ephemeral: true });
         }
 
         await interaction.deferUpdate();
@@ -111,7 +111,7 @@ module.exports = {
   slashCommand: { enabled: true },
 
   async messageRun(message) {
-    await message.safeReply("**Starting Snake Game**");
+    await message.safeReply("**Игра в змейку**");
     await startSnakeGame(message, false);
   },
 
