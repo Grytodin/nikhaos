@@ -1,6 +1,21 @@
 
 const { OpenAI } = require('openai');
 
+/**
+ * @type {import("@structures/Command")}
+ */
+
+module.exports = {
+  name: "chat", // Назва команди
+  description: "Talk to ChatGPT", // Опис команди
+  cooldown: 5, // Час перезарядки команди в секундах
+  category: "FUN", // Категорія команди
+  command: {
+    enabled: true, // Увімкнення текстової команди
+    usage: "<message>", // Формат використання команди
+    minArgsCount: 1, // Мінімальна кількість аргументів
+  },
+    
 const openai = new OpenAI({
     apiKey: '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',  
 });
