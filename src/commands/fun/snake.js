@@ -27,7 +27,7 @@ async function startSnakeGame(data, isInteraction) {
     let snake = [{ x: 7, y: 6 }];
     let direction = DIRECTIONS.right;
     let food = spawnFood(snake, direction);
-    let score = 0;
+    let score = 101;
 
     function updateBoard() {
         board = createBoard();
