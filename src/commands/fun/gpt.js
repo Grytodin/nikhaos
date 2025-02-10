@@ -1,5 +1,5 @@
+
 const { OpenAI } = require('openai');
-const { EmbedBuilder } = require('discord.js');
 
 // API ключ OpenAI без використання .env
 const openai = new OpenAI({
@@ -10,7 +10,6 @@ module.exports = {
     name: 'gpt',
     aliases: ['ask', 'question'],
     description: 'Відповідь від GPT на ваше питання',
-
     async messageRun(message, args) {
         const allowedChannelId = '1338261731234942986';  // Вказати ID каналу, в якому дозволено отримувати відповіді
         
@@ -18,13 +17,11 @@ module.exports = {
         if (message.channel.id !== allowedChannelId) {
             return;
         }
-
-        // Якщо нема аргументів
         if (args.length === 0) {
             return message.reply('Будь ласка, напишіть питання!');
         }
 
-        const question = args.join(' ');  // Обрізаємо аргументи
+        const question = args.join(' ');  // Об’єднуємо аргументи в питання
 
         // Перевірка на спеціальні питання
         if (question.toLowerCase().includes("хто тебе створив")) {
@@ -50,15 +47,7 @@ module.exports = {
             });
 
             const answer = response.choices[0].message.content.trim();  // Відрізаємо зайві пробіли
-
-            // Створення embed повідомлення для відповіді
-            const embed = new EmbedBuilder()
-                .setColor('Random')  // Випадковий колір
-                .setDescription(answer)
-                .setFooter({ text: `Запит від ${message.author.tag}` });
-
-            message.reply({ embeds: [embed] });
-
+            message.reply(answer);
         } catch (error) {
             console.error('Error from OpenAI:', error);
             message.reply('Виникла помилка при отриманні відповіді від GPT. Спробуйте пізніше.');
