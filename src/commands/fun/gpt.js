@@ -7,35 +7,37 @@ const openai = new OpenAI({
 });
 
 module.exports = {
-    name: 'gpt',
-    aliases: ['ask', 'question'],
-    description: 'Відповідь від GPT на ваше питання',
-    category: "FUN",
-
-    async messageRun(message, args) {
+    data: {
+        name: 'gpt',
+        description: 'Відповідь від GPT на ваше питання',
+        category: 'FUN',
+        options: [
+            {
+                name: 'question',
+                type: 'STRING',
+                description: 'Ваше питання до GPT',
+                required: true,
+            },
+        ],
+    },
+    async execute(interaction) {
+        const question = interaction.options.getString('question');
         const allowedChannelId = '1338261731234942986';  // Вказати ID каналу, в якому дозволено отримувати відповіді
-        
+
         // Перевірка, чи повідомлення на правильному каналі
-        if (message.channel.id !== allowedChannelId) {
-            return;
+        if (interaction.channel.id !== allowedChannelId) {
+            return interaction.reply('Ця команда доступна тільки в певному каналі.');
         }
-
-        // Якщо нема аргументів
-        if (args.length === 0) {
-            return message.reply('Будь ласка, напишіть питання!');
-        }
-
-        const question = args.join(' ');  // Обрізаємо аргументи
 
         // Перевірка на спеціальні питання
         if (question.toLowerCase().includes("хто тебе створив")) {
-            return message.reply("Я не можу це сказати.");
+            return interaction.reply("Я не можу це сказати.");
         } else if (question.toLowerCase().includes("де ти живеш")) {
-            return message.reply("Я не маю фізичного місця проживання, я віртуальний помічник.");
+            return interaction.reply("Я не маю фізичного місця проживання, я віртуальний помічник.");
         } else if (question.toLowerCase().includes("що ти можеш робити")) {
-            return message.reply("Я можу відповісти на питання, допомогти з кодом, давати поради і багато іншого!");
+            return interaction.reply("Я можу відповісти на питання, допомогти з кодом, давати поради і багато іншого!");
         } else if (question.toLowerCase().includes("чому ти не можеш це сказати")) {
-            return message.reply("Це питання виходить за межі моїх можливостей або політики.");
+            return interaction.reply("Це питання виходить за межі моїх можливостей або політики.");
         }
 
         // Якщо питання не є спеціальним, відправляємо його в OpenAI
@@ -56,13 +58,13 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor('Random')  // Випадковий колір
                 .setDescription(answer)
-                .setFooter({ text: `Запит від ${message.author.tag}` });
+                .setFooter({ text: `Запит від ${interaction.user.tag}` });
 
-            message.reply({ embeds: [embed] });
+            interaction.reply({ embeds: [embed] });
 
         } catch (error) {
             console.error('Error from OpenAI:', error);
-            message.reply('Виникла помилка при отриманні відповіді від GPT. Спробуйте пізніше.');
+            interaction.reply('Виникла помилка при отриманні відповіді від GPT. Спробуйте пізніше.');
         }
     },
 };
