@@ -38,10 +38,11 @@ module.exports = {
         try {
             const response = await openai.chat.completions.create({
                 model: 'gpt-3.5-turbo-16k',  // Можна замінити на GPT-4
-                messages: [{ role: 'user', content: question }],
+                messages: [{ role: 'system', content: "Відповідай коротко, чітко, але не обрізай речення." }, 
+               { role: 'user', content: question }],
                 max_tokens: 300,  // Обмежуємо кількість токенів для короткої відповіді
                 temperature: 0.5,  // Контролюємо креативність, знижуємо температуру для лаконічних відповідей
-                top_p: 1.0,  // Використовуємо стандартне значення для більш контрольованих відповідей
+                top_p: 0.5,  // Використовуємо стандартне значення для більш контрольованих відповідей
                 frequency_penalty: 0,  // Немає додаткових штрафів для повторень
                 presence_penalty: 0,  // Немає штрафів для нового змісту
             });
