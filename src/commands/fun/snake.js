@@ -7,20 +7,36 @@ function createBoard() {
     return Array.from({ length: GAME_SIZE.rows }, () => Array(GAME_SIZE.cols).fill('🟦'));
 }
 
-function spawnFood(board, snake) {
-    let x, y;
-    do {
-        x = Math.floor(Math.random() * GAME_SIZE.cols);
-        y = Math.floor(Math.random() * GAME_SIZE.rows);
-    } while (snake.some(segment => segment.x === x && segment.y === y));
-    return { x, y };
+// Оновлена функція спавну яблука перед змійкою
+function spawnFood(snake, direction) {
+    let head = snake[0]; 
+    let newFood = { 
+        x: head.x + direction.x, 
+        y: head.y + direction.y 
+    };
+
+    // Якщо виходить за межі або на змійці, ставимо в рандомне місце
+    if (newFood.x < 0 || newFood.x >= GAME_SIZE.cols || 
+        newFood.y < 0 || newFood.y >= GAME_SIZE.rows || 
+        snake.some(segment => segment.x === newFood.x && segment.y === newFood.y)) {
+        
+        let x, y;
+        do {
+            x = Math.floor(Math.random() * GAME_SIZE.cols);
+            y = Math.floor(Math.random() * GAME_SIZE.rows);
+        } while (snake.some(segment => segment.x === x && segment.y === y));
+
+        return { x, y };
+    }
+
+    return newFood;
 }
 
 async function startSnakeGame(data, isInteraction) {
     let board = createBoard();
     let snake = [{ x: 7, y: 6 }];
-    let food = spawnFood(board, snake);
     let direction = DIRECTIONS.right;
+    let food = spawnFood(snake, direction); // Використовуємо оновлений spawnFood
     let gameOver = false;
     let score = 0;
 
@@ -43,7 +59,7 @@ async function startSnakeGame(data, isInteraction) {
 
         snake.unshift(newHead);
         if (newHead.x === food.x && newHead.y === food.y) {
-            food = spawnFood(board, snake);
+            food = spawnFood(snake, direction); // Використовуємо оновлену функцію
             score++;
         } else {
             snake.pop();
