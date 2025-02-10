@@ -10,6 +10,7 @@ module.exports = {
     name: 'gpt',
     aliases: ['ask', 'question'],
     description: 'Відповідь від GPT на ваше питання',
+    category: "FUN",
 
     async messageRun(message, args) {
         const allowedChannelId = '1338261731234942986';  // Вказати ID каналу, в якому дозволено отримувати відповіді
