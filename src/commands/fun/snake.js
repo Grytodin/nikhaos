@@ -7,26 +7,16 @@ function createBoard() {
     return Array.from({ length: GAME_SIZE.rows }, () => Array(GAME_SIZE.cols).fill('🟦'));
 }
 
-// Оновлена функція спавну яблука перед змійкою
+// Спавн яблука перед змійкою
 function spawnFood(snake, direction) {
     let head = snake[0]; 
     let newFood = { 
-        x: head.x + direction.x, 
-        y: head.y + direction.y 
+        x: (head.x + direction.x + GAME_SIZE.cols) % GAME_SIZE.cols, 
+        y: (head.y + direction.y + GAME_SIZE.rows) % GAME_SIZE.rows
     };
 
-    // Якщо виходить за межі або на змійці, ставимо в рандомне місце
-    if (newFood.x < 0 || newFood.x >= GAME_SIZE.cols || 
-        newFood.y < 0 || newFood.y >= GAME_SIZE.rows || 
-        snake.some(segment => segment.x === newFood.x && segment.y === newFood.y)) {
-        
-        let x, y;
-        do {
-            x = Math.floor(Math.random() * GAME_SIZE.cols);
-            y = Math.floor(Math.random() * GAME_SIZE.rows);
-        } while (snake.some(segment => segment.x === x && segment.y === y));
-
-        return { x, y };
+    if (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y)) {
+        return spawnFood(snake, direction);
     }
 
     return newFood;
@@ -36,8 +26,7 @@ async function startSnakeGame(data, isInteraction) {
     let board = createBoard();
     let snake = [{ x: 7, y: 6 }];
     let direction = DIRECTIONS.right;
-    let food = spawnFood(snake, direction); // Використовуємо оновлений spawnFood
-    let gameOver = false;
+    let food = spawnFood(snake, direction);
     let score = 0;
 
     function updateBoard() {
@@ -48,18 +37,18 @@ async function startSnakeGame(data, isInteraction) {
     }
 
     function moveSnake() {
-        if (gameOver) return;
-        let newHead = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+        let newHead = { 
+            x: (snake[0].x + direction.x + GAME_SIZE.cols) % GAME_SIZE.cols, 
+            y: (snake[0].y + direction.y + GAME_SIZE.rows) % GAME_SIZE.rows
+        };
 
-        if (newHead.x < 0 || newHead.x >= GAME_SIZE.cols || newHead.y < 0 || newHead.y >= GAME_SIZE.rows ||
-            snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
-            gameOver = true;
-            return "gameover";
+        if (snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
+            return; // Якщо врізається в себе, просто не рухається
         }
 
         snake.unshift(newHead);
         if (newHead.x === food.x && newHead.y === food.y) {
-            food = spawnFood(snake, direction); // Використовуємо оновлену функцію
+            food = spawnFood(snake, direction);
             score++;
         } else {
             snake.pop();
@@ -84,11 +73,6 @@ async function startSnakeGame(data, isInteraction) {
         direction = DIRECTIONS[interaction.customId];
         let result = moveSnake();
 
-        if (result === "gameover") {
-            collector.stop();
-            return interaction.editReply({ embeds: [embed.setDescription(`☠ **Game Over!**\nFinal Score: ${score}`)], components: [] }).catch(() => {});
-        }
-
         interaction.editReply({ embeds: [embed.setDescription(result + `\n**Score:** ${score}`)] }).catch(() => {});
     });
 
@@ -96,7 +80,6 @@ async function startSnakeGame(data, isInteraction) {
         if (reason === "idle") {
             msg.edit({ embeds: [embed.setDescription("⏳ **Гру завершено через неактивність!**")], components: [] }).catch(() => {});
         }
-        gameOver = true;
     });
 }
 
