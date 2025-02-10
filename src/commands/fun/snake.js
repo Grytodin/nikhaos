@@ -1,5 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { QuickDB } = require('quick.db');
 
+const db = new QuickDB();
 const GAME_SIZE = { rows: 12, cols: 15 };
 const DIRECTIONS = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 
@@ -22,7 +24,7 @@ async function startSnakeGame(data, isInteraction) {
     let food = spawnFood(board, snake);
     let direction = DIRECTIONS.right;
     let gameOver = false;
-    let movesSinceLastUpdate = 0;
+    let score = 0;
 
     function updateBoard() {
         board = createBoard();
@@ -44,47 +46,44 @@ async function startSnakeGame(data, isInteraction) {
         snake.unshift(newHead);
         if (newHead.x === food.x && newHead.y === food.y) {
             food = spawnFood(board, snake);
-            movesSinceLastUpdate = 0;
+            score++;
         } else {
             snake.pop();
         }
 
         updateBoard();
-        movesSinceLastUpdate++;
-
         return renderBoard(board);
     }
 
     updateBoard();
-    let embed = new EmbedBuilder().setTitle("Snake Game").setDescription(renderBoard(board));
+    let embed = new EmbedBuilder().setTitle("🐍 Snake Game").setDescription(renderBoard(board) + `\n**Score:** ${score}`);
     let msg = await data.channel.send({ embeds: [embed], components: [createButtons()] });
 
-    let collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 3000000 });
+    let collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, idle: 300000 });
 
     collector.on('collect', async interaction => {
         if (interaction.user.id !== (isInteraction ? data.user.id : data.author.id)) {
-            return interaction.reply({ content: "Это не ваша игра!", ephemeral: true });
+            return interaction.reply({ content: "❌ Це не ваша гра!", ephemeral: true });
         }
 
         await interaction.deferUpdate();
-
         direction = DIRECTIONS[interaction.customId];
         let result = moveSnake();
 
         if (result === "gameover") {
             collector.stop();
-            return interaction.editReply({ embeds: [embed.setDescription('Game Over!')], components: [] }).catch(() => {});
+            await db.add(`snake_score_${interaction.user.id}`, score);
+            return interaction.editReply({ embeds: [embed.setDescription(`☠ **Game Over!**\nFinal Score: ${score}`)], components: [] }).catch(() => {});
         }
 
-        if (movesSinceLastUpdate >= 5 || result.includes('🍎')) {
-            movesSinceLastUpdate = 0;
-            interaction.editReply({ embeds: [embed.setDescription(result)] }).catch(() => {});
-        }
+        interaction.editReply({ embeds: [embed.setDescription(result + `\n**Score:** ${score}`)] }).catch(() => {});
     });
 
-    collector.on('end', () => {
+    collector.on('end', (_, reason) => {
+        if (reason === "idle") {
+            msg.edit({ embeds: [embed.setDescription("⏳ **Гру завершено через неактивність!**")], components: [] }).catch(() => {});
+        }
         gameOver = true;
-        msg.edit({ components: [] }).catch(() => {});
     });
 }
 
@@ -106,12 +105,12 @@ module.exports = {
   description: "Play Snake game on Discord",
   cooldown: 10,
   category: "FUN",
-  botPermissions: ["SendMessages", "EmbedLinks", "AddReactions", "ReadMessageHistory", "ManageMessages"],
+  botPermissions: ["SendMessages", "EmbedLinks", "ReadMessageHistory"],
   command: { enabled: true },
   slashCommand: { enabled: true },
 
   async messageRun(message) {
-    await message.safeReply("**Игра в змейку**");
+    await message.reply("**Ігра в змійку**");
     await startSnakeGame(message, false);
   },
 
@@ -119,4 +118,13 @@ module.exports = {
     await interaction.reply({ content: "", ephemeral: true });
     await startSnakeGame(interaction, true);
   },
+
+  async leaderboard(interaction) {
+    let users = await db.all();
+    let sorted = users.sort((a, b) => b.value - a.value).slice(0, 10);
+    let leaderboard = sorted.map((user, index) => `${index + 1}. <@${user.id.split('_')[2]}> - **${user.value}** points`).join('\n') || "No scores yet!";
+
+    let embed = new EmbedBuilder().setTitle("🏆 Snake Leaderboard").setDescription(leaderboard);
+    interaction.reply({ embeds: [embed] });
+  }
 };
