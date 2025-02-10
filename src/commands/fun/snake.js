@@ -1,7 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
-const { QuickDB } = require('quick.db');
 
-const db = new QuickDB();
 const GAME_SIZE = { rows: 12, cols: 15 };
 const DIRECTIONS = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 
@@ -72,7 +70,6 @@ async function startSnakeGame(data, isInteraction) {
 
         if (result === "gameover") {
             collector.stop();
-            await db.add(`snake_score_${interaction.user.id}`, score);
             return interaction.editReply({ embeds: [embed.setDescription(`☠ **Game Over!**\nFinal Score: ${score}`)], components: [] }).catch(() => {});
         }
 
@@ -101,30 +98,21 @@ function createButtons() {
 }
 
 module.exports = {
-  name: "snake",
-  description: "Play Snake game on Discord",
-  cooldown: 10,
-  category: "FUN",
-  botPermissions: ["SendMessages", "EmbedLinks", "ReadMessageHistory"],
-  command: { enabled: true },
-  slashCommand: { enabled: true },
+    name: "snake",
+    description: "Play Snake game on Discord",
+    cooldown: 10,
+    category: "FUN",
+    botPermissions: ["SendMessages", "EmbedLinks", "ReadMessageHistory"],
+    command: { enabled: true },
+    slashCommand: { enabled: true },
 
-  async messageRun(message) {
-    await message.reply("**Ігра в змійку**");
-    await startSnakeGame(message, false);
-  },
+    async messageRun(message) {
+        await message.reply("**Ігра в змійку**");
+        await startSnakeGame(message, false);
+    },
 
-  async interactionRun(interaction) {
-    await interaction.reply({ content: "", ephemeral: true });
-    await startSnakeGame(interaction, true);
-  },
-
-  async leaderboard(interaction) {
-    let users = await db.all();
-    let sorted = users.sort((a, b) => b.value - a.value).slice(0, 10);
-    let leaderboard = sorted.map((user, index) => `${index + 1}. <@${user.id.split('_')[2]}> - **${user.value}** points`).join('\n') || "No scores yet!";
-
-    let embed = new EmbedBuilder().setTitle("🏆 Snake Leaderboard").setDescription(leaderboard);
-    interaction.reply({ embeds: [embed] });
-  }
+    async interactionRun(interaction) {
+        await interaction.reply({ content: "", ephemeral: true });
+        await startSnakeGame(interaction, true);
+    }
 };
