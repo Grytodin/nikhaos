@@ -1,9 +1,11 @@
+
 const { OpenAI } = require('openai');
 const { EmbedBuilder, ApplicationCommandOptionType } = require('discord.js');
 const { EMBED_COLORS } = require('@root/config');
 
+// Використовуйте змінну оточення для API ключа
 const openai = new OpenAI({
-    apiKey: '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',
+    apiKey: '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', // Додайте ключ у змінні оточення
 });
 
 const ignoredUsers = new Map();
@@ -15,9 +17,20 @@ const choices = ["who created you", "where do you live", "what can you do", "why
 
 module.exports = {
     name: 'gpt',
-    aliases: ['ask', 'question'],
     description: 'Відповідь від GPT на ваше питання',
+    cooldown: 5,
+    category: 'FUN',
+    botPermissions: ['EmbedLinks'],
 
+    // Префіксна команда
+    command: {
+        enabled: true,
+        usage: '<питання>',
+        aliases: ['ask', 'question'],
+        minArgsCount: 1,
+    },
+
+    // Slash-команда
     slashCommand: {
         enabled: true,
         options: [
@@ -30,20 +43,23 @@ module.exports = {
         ],
     },
 
+    // Обробка префіксної команди
     async messageRun(message, args) {
         const allowedChannelId = '1338261731234942986';  // ID дозволеного каналу
 
-        // Якщо команда викликана не в дозволеному каналі — ігноруємо
-        if (message.channel.id !== allowedChannelId) return;
+        // Перевірка каналу
+        if (message.channel.id !== allowedChannelId) {
+            return message.reply('Ця команда доступна тільки в певному каналі.');
+        }
 
         const userId = message.author.id;
 
-        // Якщо користувач в списку ігнорованих — бот його "ображено" і не відповідає
+        // Перевірка на ігнорування
         if (ignoredUsers.has(userId)) {
             return message.react('😡');
         }
 
-        // Перевіряємо, чи є питання
+        // Перевірка на наявність питання
         if (args.length === 0) {
             return message.reply('Будь ласка, напишіть питання!');
         }
@@ -77,13 +93,14 @@ module.exports = {
             });
 
             const answer = response.choices?.[0]?.message?.content?.trim() || 'Я не знаю, що відповісти.';
-            message.reply(answer);
+            await message.reply(answer);
         } catch (error) {
-            console.error('❌ Error from OpenAI:', error);
-            message.reply('Виникла помилка при отриманні відповіді від GPT. Спробуйте пізніше.');
+            console.error('❌ Помилка від OpenAI:', error);
+            await message.reply('Виникла помилка при отриманні відповіді від GPT. Спробуйте пізніше.');
         }
     },
 
+    // Обробка Slash-команди
     async interactionRun(interaction) {
         const question = interaction.options.getString('question').toLowerCase();
 
@@ -96,7 +113,7 @@ module.exports = {
         try {
             // Запит до OpenAI
             const response = await openai.chat.completions.create({
-                model: 'gpt-3.5-turbo-16k',
+                model: 'gpt-3.5-turbo',
                 messages: [
                     { role: 'system', content: 'Відповідай коротко, чітко, але не обрізай речення.' },
                     { role: 'user', content: question },
@@ -109,14 +126,14 @@ module.exports = {
             const answer = response.choices?.[0]?.message?.content?.trim() || 'Я не знаю, що відповісти.';
             await interaction.followUp(answer);
         } catch (error) {
-            console.error('❌ Error from OpenAI:', error);
+            console.error('❌ Помилка від OpenAI:', error);
             await interaction.followUp('Виникла помилка при отриманні відповіді від GPT. Спробуйте пізніше.');
         }
     },
 };
 
 // Обробка спеціальних запитань
-const handleSpecialQuestions = async (question, user) => {
+async function handleSpecialQuestions(question, user) {
     let responseMessage = '';
 
     switch (question) {
@@ -139,5 +156,5 @@ const handleSpecialQuestions = async (question, user) => {
     return new EmbedBuilder()
         .setDescription(responseMessage)
         .setColor(EMBED_COLORS.INFO)
-        .setFooter({ text: `Requested by ${user.tag}` });
-};
+        .setFooter({ text: `Запит від ${user.tag}` });
+}
