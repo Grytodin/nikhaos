@@ -30,13 +30,13 @@ module.exports = {
   // PLUGINS
 
   AUTOMOD: {
-    ENABLED: false, // Enable auto-moderation
+    ENABLED: true, // Enable auto-moderation
     LOG_EMBED: "#36393F",
     DM_EMBED: "#36393F",
   },
 
   DASHBOARD: {
-    enabled: true, // Disable dashboard by default
+    enabled: false, // Disable dashboard by default
     baseURL: "http://localhost:8080", // Base URL
     failureURL: "http://localhost:8080", // Failure redirect URL
     port: "8080", // Port to run the dashboard on
