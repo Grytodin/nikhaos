@@ -9,12 +9,11 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "nodemon .",
-    "start": "node .",
-    "format": "prettier --write src",
-    "docker:package": "tar -cf discord-js-bot.tar dashboard logs src bot.js config.js dockerfile package.json package-lock.json",
-    "docker:build": "docker build -t saitejamadha/discord-js-bot:5.5.0 ."
-  },
+  "dev": "nodemon .",
+  "start": "node bot.js & node server.js",
+  "format": "prettier --write src",
+  "docker:package": "tar -cf discord-js-bot.tar dashboard logs src bot.js config.js dockerfile package.json package-lock.json"
+},
   "homepage": "https://github.com/saiteja-madha/discord-js-bot#readme",
   "repository": {
     "type": "git",
