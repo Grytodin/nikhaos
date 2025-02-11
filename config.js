@@ -104,7 +104,7 @@ module.exports = {
     ENABLED: true, // Enable bot presence
     STATUS: "idle", // Bot status [online, idle, dnd, invisible]
     TYPE: "WATCHING", // Presence type [PLAYING, LISTENING, WATCHING, COMPETING]
-    MESSAGE: "ATTENTION!!! The bot is still in development.The release stage will be published on the support server below.", // Status message
+    MESSAGE: "ATTENTION!!! The bot is still in development.The release stage will be published on the support server below.{members} members in (servers) servers", // Status message
   },
 
   STATS: {
