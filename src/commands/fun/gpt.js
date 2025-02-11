@@ -1,5 +1,5 @@
 const { OpenAI } = require('openai');
-const { EmbedBuilder, ApplicationCommandOptionType } = require('discord.js');
+const { EmbedBuilder, ApplicationCommandOptionType, Message } = require('discord.js');
 const { EMBED_COLORS } = require('@root/config');
 
 const openai = new OpenAI({
@@ -100,6 +100,40 @@ module.exports = {
     } catch (error) {
       console.error('❌ Помилка від OpenAI:', error);
       await interaction.followUp('Виникла помилка при отриманні відповіді від GPT. Спробуйте пізніше.');
+    }
+  },
+
+  // Додаємо обробку повідомлень, які є відповіддю на повідомлення бота
+  async onMessage(message) {
+    if (message.author.bot) return; // Ігноруємо повідомлення від інших ботів
+
+    // Перевіряємо, чи це відповідь на повідомлення бота
+    if (message.reference && message.reference.messageId) {
+      const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+      if (repliedMessage.author.id === message.client.user.id) {
+        // Якщо це відповідь на повідомлення бота, обробляємо її
+        const userId = message.author.id;
+
+        if (ignoredUsers.has(userId)) {
+          return message.react('😡');
+        }
+
+        const question = message.content.toLowerCase();
+
+        if (forbiddenWords.some(word => question.includes(word))) {
+          ignoredUsers.set(userId, true);
+          setTimeout(() => ignoredUsers.delete(userId), ignoreDuration);
+          return message.reply('😠 Ти мене образив... Я з тобою більше не говорю 10 хвилин.');
+        }
+
+        try {
+          const answer = await handleGPTRequest(userId, question);
+          await message.reply(answer);
+        } catch (error) {
+          console.error('❌ Помилка від OpenAI:', error);
+          await message.reply('Виникла помилка при отриманні відповіді від GPT. Спробуйте пізніше.');
+        }
+      }
     }
   },
 };
