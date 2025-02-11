@@ -1,4 +1,3 @@
-
 const { OpenAI } = require('openai');
 const { EmbedBuilder, ApplicationCommandOptionType } = require('discord.js');
 const { EMBED_COLORS } = require('@root/config');
@@ -10,35 +9,9 @@ const openai = new OpenAI({
 
 const ignoredUsers = new Map();
 const ignoreDuration = 10 * 60 * 1000;  // 10 хвилин
+const userConversations = new Map(); // Історія діалогів
 
-const forbiddenWords = [
-    // Російські мати
-    'блядь', 'блять', 'сука', 'хуй', 'пизда', 'ебать', 'ебаный', 'ебанутый', 'ебануть', 'ебло', 
-    'еблан', 'ебучий', 'пидор', 'пидорас', 'пидорок', 'гандон', 'мудак', 'чмо', 'уебок', 'долбоеб', 
-    'долбаеб', 'ебнутый', 'хуесос', 'хуила', 'хуевый', 'хуево', 'хуеплет', 'хуйню', 'хуйней', 
-    'охуенно', 'охуенный', 'охуел', 'охуеть', 'охуевший', 'заебал', 'заебись', 'заебись', 'заебись', 
-    'пидорасина', 'пидрила', 'шлюха', 'проститутка', 'блядина', 'манда', 'говно', 'говнюк', 'говнистый', 
-    'обосрался', 'обосранец', 'ебучка', 'ебарь', 'сосать', 'соси', 'пиздюк', 'пиздеть', 'пиздец', 'пердеть', 
-    'пердун', 'залупа', 'залупить', 'хер', 'нахуй', 'нахуя', 'пошел нахуй', 'идите нахуй', 'пидорас', 
-    'мразь', 'ублюдок', 'конченный', 'гондон', 'сукин сын', 'сука блять', 'бляха-муха', 'ебаный в рот', 
-    'ебаный насос', 'жопа', 'жопник', 'жополиз', 'дристать', 'дрищ', 'влагалище', 'анус', 'гавно', 
-    'гавнюк', 'говноед', 'пердун', 'ссанина', 'ссать', 'отсоси', 'провались', 'хуепутало',
-
-    // Українські мати
-    'курва', 'курвин', 'курвисько', 'йобаний', 'йобаний в рот', 'йобаний насос', 'йобати', 'йобнувся', 
-    'йобнутый', 'йобнуть', 'йобан', 'пизда', 'пиздець', 'пиздити', 'пиздюк', 'пиздюлі', 'пиздюліна', 
-    'пиздюля', 'хуй', 'хує', 'хуєвий', 'хуєсос', 'нахуй', 'нахуя', 'хуйня', 'хуйовий', 'хуярити', 'заїбало', 
-    'заїбати', 'заїбаний', 'заїбись', 'єбать', 'єбаний', 'єблан', 'єбло', 'єбучий', 'гандонище', 'гандон', 
-    'гімно', 'гімнюк', 'гімняк', 'срака', 'сраний', 'срати', 'срань', 'сракувати', 'сракожопий', 'сцикун', 
-    'сцикуха', 'сцикло', 'сцяти', 'сцикати', 'сцикун', 'пердун', 'пердіти', 'пердячий', 'пердьож', 'бздіти', 
-    'мудило', 'мудяк', 'мудень', 'мудиздрик', 'мудиздище', 'манда', 'мандюк', 'мандюкати', 'підар', 
-    'підор', 'підорас', 'сраколиз', 'сракогриз', 'сракожер', 'сракожуй', 'хер', 'херовий', 'херня', 'херувала', 
-    'хуякати', 'хуякт', 'хуякнутий', 'хуярити', 'хуяри', 'нахуячити', 'пердосрань', 'пердюх', 'пердуха', 
-    'дупа', 'дуписько', 'дупило', 'сраколиз', 'чортяка', 'чортячин', 'шльондра', 'шмарка', 'шмара', 'шмараха', 
-    'шмарило', 'гімномес', 'гімножуй', 'сруля', 'сральня', 'гімномет', 'гімнолюб', 'хуїст', 'хуяр',
-    'єбать-копать', 'єбошити', 'єбашити', 'заєбать', 'заєбись', 'пиздюк', 'пиздячити', 'хуєпльот', 'хуєложець', 
-    'хуєзнавий', 'хуєзнайщо', 'йобаний в рот', 'йобаний насос', 'курва-мать', 'курва-мудило', 'підарюга'
-];
+const forbiddenWords = [...]; // Ваш список заборонених слів
 
 const choices = ["who created you", "where do you live", "what can you do", "why can't you say this"];
 
@@ -49,7 +22,6 @@ module.exports = {
     category: 'FUN',
     botPermissions: ['EmbedLinks'],
 
-    // Префіксна команда
     command: {
         enabled: true,
         usage: '<питання>',
@@ -57,7 +29,6 @@ module.exports = {
         minArgsCount: 1,
     },
 
-    // Slash-команда
     slashCommand: {
         enabled: true,
         options: [
@@ -70,49 +41,54 @@ module.exports = {
         ],
     },
 
-    // Обробка префіксної команди
     async messageRun(message, args) {
-        const allowedChannelId = '1338261731234942986';  // ID дозволеного каналу
+        const allowedChannelId = '1338261731234942986'; 
 
-        // Перевірка каналу
         if (message.channel.id !== allowedChannelId) {
             return message.reply('Ця команда доступна тільки в певному каналі.');
         }
 
         const userId = message.author.id;
 
-        // Перевірка на ігнорування
         if (ignoredUsers.has(userId)) {
             return message.react('😡');
         }
 
-        // Перевірка на наявність питання
         if (args.length === 0) {
             return message.reply('Будь ласка, напишіть питання!');
         }
 
         const question = args.join(' ').toLowerCase();
 
-        // Перевірка на образливі слова
         if (forbiddenWords.some(word => question.includes(word))) {
             ignoredUsers.set(userId, true);
             setTimeout(() => ignoredUsers.delete(userId), ignoreDuration);
             return message.reply('😠 Ти мене образив... Я з тобою більше не говорю 10 хвилин.');
         }
 
-        // Обробка спеціальних запитань
         if (choices.includes(question)) {
             const response = await handleSpecialQuestions(question, message.author);
             return message.reply({ embeds: [response] });
         }
 
+        // Перевіряємо, чи це відповідь на попереднє повідомлення бота
+        let conversationHistory = userConversations.get(userId) || [];
+
+        if (!message.reference) {
+            // Якщо це не відповідь на попереднє повідомлення, очищаємо історію
+            conversationHistory = [];
+        }
+
+        // Додаємо нове питання до історії
+        conversationHistory.push({ role: 'user', content: question });
+
         try {
-            // Запит до OpenAI
+            // Запит до OpenAI з історією діалогу
             const response = await openai.chat.completions.create({
-                model: 'gpt-3.5-turbo-16k',
+                model: 'gpt-3.5-turbo',
                 messages: [
                     { role: 'system', content: 'Відповідай коротко, чітко, але не обрізай речення.' },
-                    { role: 'user', content: question },
+                    ...conversationHistory, // Додаємо історію діалогу
                 ],
                 max_tokens: 150,
                 temperature: 0.4,
@@ -120,6 +96,11 @@ module.exports = {
             });
 
             const answer = response.choices?.[0]?.message?.content?.trim() || 'Я не знаю, що відповісти.';
+
+            // Додаємо відповідь бота до історії
+            conversationHistory.push({ role: 'assistant', content: answer });
+            userConversations.set(userId, conversationHistory); // Оновлюємо історію
+
             await message.reply(answer);
         } catch (error) {
             console.error('❌ Помилка від OpenAI:', error);
@@ -127,23 +108,25 @@ module.exports = {
         }
     },
 
-    // Обробка Slash-команди
     async interactionRun(interaction) {
+        const userId = interaction.user.id;
         const question = interaction.options.getString('question').toLowerCase();
 
-        // Обробка спеціальних запитань
+        let conversationHistory = userConversations.get(userId) || [];
+
         if (choices.includes(question)) {
             const response = await handleSpecialQuestions(question, interaction.user);
             return interaction.followUp({ embeds: [response] });
         }
 
         try {
-            // Запит до OpenAI
+            conversationHistory.push({ role: 'user', content: question });
+
             const response = await openai.chat.completions.create({
                 model: 'gpt-3.5-turbo',
                 messages: [
                     { role: 'system', content: 'Відповідай коротко, чітко, але не обрізай речення.' },
-                    { role: 'user', content: question },
+                    ...conversationHistory,
                 ],
                 max_tokens: 150,
                 temperature: 0.4,
@@ -151,6 +134,10 @@ module.exports = {
             });
 
             const answer = response.choices?.[0]?.message?.content?.trim() || 'Я не знаю, що відповісти.';
+
+            conversationHistory.push({ role: 'assistant', content: answer });
+            userConversations.set(userId, conversationHistory);
+
             await interaction.followUp(answer);
         } catch (error) {
             console.error('❌ Помилка від OpenAI:', error);
@@ -159,7 +146,6 @@ module.exports = {
     },
 };
 
-// Обробка спеціальних запитань
 async function handleSpecialQuestions(question, user) {
     let responseMessage = '';
 
@@ -185,3 +171,12 @@ async function handleSpecialQuestions(question, user) {
         .setColor(EMBED_COLORS.INFO)
         .setFooter({ text: `Запит від ${user.tag}` });
 }
+
+
+
+
+
+
+
+
+
