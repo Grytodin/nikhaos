@@ -151,8 +151,8 @@ async function handleGPTRequest(userId, question) {
       { role: 'system', content: 'Відповідай коротко, чітко, але не обрізай речення.' },
       ...conversation,
     ],
-    max_tokens: 150,
-    temperature: 0.4,
+    max_tokens: 700,
+    temperature: 1,
     top_p: 0.5,
   });
 
