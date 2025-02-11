@@ -65,6 +65,11 @@ module.exports = {
 
     const question = args.join(' ').toLowerCase();
 
+    // Перевірка на ключові слова, пов'язані з Грутодином
+    if (['грутодин', 'грут', 'grytodin'].some(word => question.includes(word))) {
+      return message.reply('Мій розробник — це чудова людина, я його дуже люблю! 💖');
+    }
+
     if (forbiddenWords.some(word => question.includes(word))) {
       ignoredUsers.set(userId, true);
       setTimeout(() => ignoredUsers.delete(userId), ignoreDuration);
@@ -87,6 +92,11 @@ module.exports = {
 
   async interactionRun(interaction) {
     const question = interaction.options.getString('question').toLowerCase();
+
+    // Перевірка на ключові слова, пов'язані з Грутодином
+    if (['грутодин', 'грут', 'grytodin'].some(word => question.includes(word))) {
+      return interaction.followUp('Мій розробник — це чудова людина, я його дуже люблю! 💖');
+    }
 
     if (choices.includes(question)) {
       const response = await handleSpecialQuestions(question, interaction.user);
@@ -118,6 +128,11 @@ module.exports = {
         }
 
         const question = message.content.toLowerCase();
+
+        // Перевірка на ключові слова, пов'язані з Грутодином
+        if (['грутодин', 'грут', 'grytodin'].some(word => question.includes(word))) {
+          return message.reply('Мій розробник — це чудова людина, я його дуже люблю! 💖');
+        }
 
         if (forbiddenWords.some(word => question.includes(word))) {
           ignoredUsers.set(userId, true);
