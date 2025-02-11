@@ -30,7 +30,7 @@ module.exports = {
   // PLUGINS
 
   AUTOMOD: {
-    ENABLED: true, // Enable auto-moderation
+    ENABLED: false, // Enable auto-moderation
     LOG_EMBED: "#36393F",
     DM_EMBED: "#36393F",
   },
