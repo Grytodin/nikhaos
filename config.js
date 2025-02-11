@@ -36,7 +36,7 @@ module.exports = {
   },
 
   DASHBOARD: {
-    enabled: false, // Disable dashboard by default
+    enabled: true, // Disable dashboard by default
     baseURL: "http://localhost:8080", // Base URL
     failureURL: "http://localhost:8080", // Failure redirect URL
     port: "8080", // Port to run the dashboard on
