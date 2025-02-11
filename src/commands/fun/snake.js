@@ -119,5 +119,3 @@ async interactionRun(interaction) {
 
 };
 
-Зроби щоб рахунок зразу був 100
-
