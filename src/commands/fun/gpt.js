@@ -1,5 +1,5 @@
 const { OpenAI } = require('openai');
-const { EmbedBuilder, ApplicationCommandOptionType, Message } = require('discord.js');
+const { EmbedBuilder, ApplicationCommandOptionType } = require('discord.js');
 const { EMBED_COLORS } = require('@root/config');
 
 const openai = new OpenAI({
@@ -103,7 +103,6 @@ module.exports = {
     }
   },
 
-  // Додаємо обробку повідомлень, які є відповіддю на повідомлення бота
   async onMessage(message) {
     if (message.author.bot) return; // Ігноруємо повідомлення від інших ботів
 
