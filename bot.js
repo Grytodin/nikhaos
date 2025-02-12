@@ -11,6 +11,7 @@ const { initializeMongoose } = require("@src/database/mongoose");
 const { BotClient } = require("@src/structures");
 const { validateConfiguration } = require("@helpers/Validator");
 
+
 validateConfiguration();
 
 // initialize client
