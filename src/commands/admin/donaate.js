@@ -1,63 +1,113 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const Donations = require("../../database/schemas/Donations");
 
-/**
- * Placeholder for command data
- * @type {CommandData}
- */
 module.exports = {
-  name: "donate", // Название команды
-  description: "Показывает список донатеров", // Описание команды
-  cooldown: 5, // Время перезарядки команды в секундах
-  category: "UTILITY", // Категория команды
-  botPermissions: [], // Права, нужные боту
-  userPermissions: [], // Права, нужные пользователю
+  name: "donate",
+  description: "Показує список донатерів та їх внески",
+  cooldown: 5,
+  category: "UTILITY",
+  botPermissions: [],
+  userPermissions: [],
   command: {
-    enabled: true, // Включение текстовой команды
-    aliases: ["донатеры", "дон"], // Синонимы для команды
-    usage: "", // Формат использования команды
-    minArgsCount: 0, // Минимальное количество аргументов
-    subcommands: [], // Подкоманды (если есть)
+    enabled: true,
+    aliases: ["донатеры", "дон"],
+    usage: "",
+    minArgsCount: 0,
+    subcommands: [],
   },
   slashCommand: {
-    enabled: false, // Отключение слэш-команды
+    enabled: true,
     ephemeral: false,
-    options: [],
+    options: [
+      {
+        name: "add",
+        description: "Додати донат користувачу",
+        type: 1,
+        options: [
+          {
+            name: "user",
+            description: "Користувач",
+            type: 6, // USER
+            required: true,
+          },
+          {
+            name: "amount",
+            description: "Сума донату (USD)",
+            type: 10, // NUMBER
+            required: true,
+          },
+        ],
+      },
+    ],
   },
 
   /**
-   * Выполнение текстовой команды
+   * Обробка текстової команди
    */
   messageRun: async (message, args, data) => {
-    const roleName = "・Bot sponsor"; // Название роли донатеров
+    const roleName = "・Bot sponsor";
     const role = message.guild.roles.cache.find(r => r.name === roleName);
 
     if (!role) {
-      return message.reply(`Роль **${roleName}** не найдена на этом сервере.`);
+      return message.reply(`❌ Роль **${roleName}** не знайдена.`);
     }
 
     const membersWithRole = role.members;
-
     if (membersWithRole.size === 0) {
-      return message.reply(`Никто ещё не получил роль **${roleName}**.`);
+      return message.reply(`Ніхто ще не має ролі **${roleName}**.`);
     }
 
+    // Отримуємо дані з бази
+    const donations = await Donations.find({ guildId: message.guild.id });
+
+    // Формуємо список
+    const donorList = membersWithRole
+      .map((member) => {
+        const userDonation = donations.find(d => d.userId === member.id);
+        return {
+          id: member.id,
+          amount: userDonation ? userDonation.amount : 0,
+        };
+      })
+      .sort((a, b) => b.amount - a.amount)
+      .map((donor, index) => `**${index + 1}.** <@${donor.id}> — **$${donor.amount.toFixed(2)}**`)
+      .join("\n");
+
     const embed = new EmbedBuilder()
-      .setTitle(`Список донатеров 💖`)
-      .setDescription(
-        membersWithRole
-          .map((member, index) => `✨ <@${member.id}>`)
-          .join("\n")
-      )
+      .setTitle(`💖 Список донатерів`)
+      .setDescription(donorList)
       .setColor("Gold")
-      .setFooter({ text: "Спасибо за вашу поддержку! 🥰" });
+      .setFooter({ text: "Дякуємо за вашу підтримку! 🥰" });
 
     await message.reply({ embeds: [embed] });
   },
 
   /**
-   * Выполнение слэш-команды
+   * Обробка слеш-команди
    */
-  interactionRun: (interaction, data) => {
-    interaction.reply("Эта команда не поддерживает слэш-взаимодействия.");
+  interactionRun: async (interaction) => {
+    if (interaction.options.getSubcommand() === "add") {
+      if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+        return interaction.reply({ content: "❌ У вас немає прав на цю команду.", ephemeral: true });
+      }
+
+      const user = interaction.options.getUser("user");
+      const amount = interaction.options.getNumber("amount");
+
+      if (amount <= 0) {
+        return interaction.reply({ content: "❌ Сума має бути більше 0.", ephemeral: true });
+      }
+
+      // Оновлюємо запис у базі
+      const donation = await Donations.findOneAndUpdate(
+        { guildId: interaction.guild.id, userId: user.id },
+        { $inc: { amount: amount } },
+        { upsert: true, new: true }
+      );
+
+      return interaction.reply({
+        content: `✅ Додано **$${amount.toFixed(2)}** до донату <@${user.id}>. Загальна сума: **$${donation.amount.toFixed(2)}**`,
+      });
+    }
   },
 };
