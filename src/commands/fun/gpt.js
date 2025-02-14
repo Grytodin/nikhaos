@@ -148,7 +148,7 @@ async function handleGPTRequest(userId, question) {
   const response = await openai.chat.completions.create({
     model: 'gpt-3.5-turbo-16k',
     messages: [
-      { role: 'system', content: 'Відповідай коротко, чітко, але не обрізай речення.' },
+      { role: 'system', content: '.' },
       ...conversation,
     ],
     max_tokens: 700,
