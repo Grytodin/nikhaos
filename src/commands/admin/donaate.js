@@ -28,7 +28,7 @@ module.exports = {
    * Выполнение текстовой команды
    */
   messageRun: async (message, args, data) => {
-    const roleName = "Спонсор бота"; // Название роли донатеров
+    const roleName = "・Bot sponsor"; // Название роли донатеров
     const role = message.guild.roles.cache.find(r => r.name === roleName);
 
     if (!role) {
