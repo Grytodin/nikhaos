@@ -42,7 +42,7 @@ module.exports = {
   },
 
   /**
-   * Обробка текстової команди
+   * Обробка текстової команди (donate)
    */
   messageRun: async (message, args, data) => {
     try {
@@ -88,7 +88,7 @@ module.exports = {
   },
 
   /**
-   * Обробка слеш-команди
+   * Обробка слеш-команди (donate add)
    */
   interactionRun: async (interaction) => {
     try {
@@ -129,5 +129,56 @@ module.exports = {
         interaction.reply({ content: "❌ Сталася помилка під час виконання команди.", ephemeral: true });
       }
     }
+  },
+
+  /**
+   * Нова текстова команда (adddonate)
+   */
+  addDonateCommand: {
+    name: "adddonate",
+    description: "Додає суму донату користувачеві",
+    cooldown: 5,
+    category: "UTILITY",
+    botPermissions: [],
+    userPermissions: [PermissionFlagsBits.Administrator], // Тільки адміни
+    command: {
+      enabled: true,
+      aliases: [],
+      usage: "<сума>$ [@користувач]",
+      minArgsCount: 1,
+    },
+
+    messageRun: async (message, args) => {
+      const amountArg = args[0].replace(/\$/g, ''); // Видаляємо всі $
+      const amount = parseFloat(amountArg);
+
+      // Перевірка коректності суми
+      if (isNaN(amount) || amount <= 0) {
+        return message.reply("❌ Будь ласка, вкажіть коректну суму (наприклад: `5.50$`).");
+      }
+
+      // Визначаємо користувача (якщо згаданий хтось, інакше - автор)
+      const targetUser = message.mentions.users.first() || message.author;
+      if (targetUser.bot) {
+        return message.reply("❌ Не можна додавати донат боту.");
+      }
+
+      try {
+        // Оновлюємо базу даних
+        const donation = await Donations.findOneAndUpdate(
+          { guildId: message.guild.id, userId: targetUser.id },
+          { $inc: { amount: amount } },
+          { upsert: true, new: true }
+        );
+
+        // Підтвердження
+        message.reply(
+          `✅ Додано **$${amount.toFixed(2)}** до донату <@${targetUser.id}>. Загальна сума: **$${donation.amount.toFixed(2)}**`
+        );
+      } catch (error) {
+        console.error("Помилка при додаванні донату:", error);
+        message.reply("❌ Сталася помилка під час оновлення донату.");
+      }
+    },
   },
 };
