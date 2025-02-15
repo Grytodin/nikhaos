@@ -1,81 +1,101 @@
-const { EmbedBuilder, ApplicationCommandOptionType } = require("discord.js");
-const { EMBED_COLORS } = require("@root/config");
+const { EmbedBuilder } = require("discord.js");
 const axios = require("axios");
 
-const choices = ["hug", "kiss", "cuddle", "feed", "pat", "poke", "slap", "smug", "tickle", "wink", "gachi"];
+const reactions = ["hug", "kiss", "cuddle", "feed", "pat", "poke", "slap", "smug", "tickle", "wink"];
 
-/**
- * @type {import("@structures/Command")}
- */
 module.exports = {
   name: "react",
-  description: "anime reactions",
-  enabled: true,
+  description: "Отправить аниме-реакцию, которая растопит чьё-то сердце!",
   category: "ANIME",
   cooldown: 5,
-  command: {
-    enabled: true,
-    minArgsCount: 1,
-    usage: "[reaction]",
-  },
-  slashCommand: {
-    enabled: true,
-    options: [
-      {
-        name: "category",
-        description: "reaction type",
-        type: ApplicationCommandOptionType.String,
-        required: true,
-        choices: choices.map((ch) => ({ name: ch, value: ch })),
-      },
-    ],
-  },
+  aliases: reactions, // Команда будет работать как !hug, !kiss и т.д.
 
-  async messageRun(message, args) {
-    const category = args[0].toLowerCase();
-    if (!choices.includes(category)) {
-      return message.safeReply(`Invalid choice: \`${category}\`.\nAvailable reactions: ${choices.join(", ")}`);
+  async messageRun(message) {
+    const command = message.content.slice(1).split(" ")[0].toLowerCase();
+    if (!reactions.includes(command)) {
+      return message.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor("Red")
+            .setDescription(
+              `❌ Ой-ой, такой реакции не существует: \`${command}\`\n` +
+              `✅ Вот какие милые реакции ты можешь отправить: ${reactions.map(r => `\`${r}\``).join(", ")}`
+            )
+        ]
+      });
     }
 
-    const embed = await genReaction(category, message.author);
-    await message.safeReply({ embeds: [embed] });
-  },
-
-  async interactionRun(interaction) {
-    const choice = interaction.options.getString("category");
-    const embed = await genReaction(choice, interaction.user);
-    await interaction.followUp({ embeds: [embed] });
-  },
-};
-
-const genReaction = async (category, user) => {
-  try {
-    const tenorApiKey = "AIzaSyAcAMBkm9DvIcxxwwfQ3TMDHnX-URmjTME"; // Замініть на ваш API-ключ Tenor
-    const query = category || "happy"; 
-
-    const response = await axios.get(`https://tenor.googleapis.com/v2/search`, {
-      params: {
-        key: tenorApiKey,
-        q: query,
-        limit: 10, // Отримуємо 10 результатів для унікальності
-        media_filter: "minimal",
-      },
-    });
-
-    if (!response.data.results.length) throw new Error("No results found");
-
-    // Вибираємо випадковий GIF, щоб уникнути повторень
-    const randomIndex = Math.floor(Math.random() * response.data.results.length);
-    const imageUrl = response.data.results[randomIndex].media_formats.gif.url;
-
-    return new EmbedBuilder()
-      .setImage(imageUrl)
-      .setColor("Random")
-      .setFooter({ text: `Requested By ${user.tag}` });
-  } catch (ex) {
-    return new EmbedBuilder()
-      .setColor(EMBED_COLORS.ERROR)
-      .setDescription("Failed to fetch reaction. Try again!")
-      .setFooter({ text: `Requested By ${user.tag}` });
+    const target = message.mentions.users.first();
+    const embed = await createReactionEmbed(command, message.author, target);
+    await message.reply({ embeds: [embed] });
   }
 };
+
+async function createReactionEmbed(category, user, target) {
+  try {
+    const { data } = await axios.get(`https://api.waifu.pics/sfw/${category}`);
+    if (!data.url) throw new Error("Не удалось получить изображение");
+
+    const userTag = `@${user.username}`;
+    const targetTag = target ? `@${target.username}` : "всех, кого обнимает эта любовь";
+
+    return new EmbedBuilder()
+      // В шапке эмбеда отображаем ник и круглую аватарку
+      .setAuthor({
+        name: user.tag,
+        iconURL: user.displayAvatarURL({ dynamic: true })
+      })
+      .setColor("Random")
+      .setTitle(`Реакция: ${getReactionTitle(category)}`)
+      .setDescription(`**${userTag}** ${getReactionText(category)} **${targetTag}**! 💖`)
+      .setImage(data.url)
+      // Футер с информацией о том, кто запросил реакцию, с аватаркой и отметкой времени
+      .setFooter({
+        text: `Запросил: ${user.tag}`,
+        iconURL: user.displayAvatarURL({ dynamic: true })
+      })
+      .setTimestamp();
+  } catch (error) {
+    console.error(`Ошибка получения реакции: ${error.message}`);
+    return new EmbedBuilder()
+      .setColor("Red")
+      .setDescription("⚠ Не удалось получить реакцию. Попробуйте ещё раз!")
+      .setFooter({
+        text: `Запросил: ${user.tag}`,
+        iconURL: user.displayAvatarURL({ dynamic: true })
+      })
+      .setTimestamp();
+  }
+}
+
+function getReactionTitle(category) {
+  const titles = {
+    hug: "Обнимашки, чтобы согреться",
+    kiss: "Поцелуй на ушко",
+    cuddle: "Пригорнуться, как уютно",
+    feed: "Готовлю для тебя сладости",
+    pat: "Погладить по голове, как мило",
+    poke: "Тык, ты меня слышишь?",
+    slap: "Ляпас, но с любовью",
+    smug: "Самовдоволенный взгляд",
+    tickle: "Ласковое лоскотание",
+    wink: "Подмигиваю тебе 😉"
+  };
+  return titles[category] || category;
+}
+
+function getReactionText(category) {
+  const reactionTexts = {
+    hug: "обнял так нежно",
+    kiss: "поцеловал в щёчку",
+    cuddle: "пригорнул к себе",
+    feed: "покормил вкусняшками",
+    pat: "погладил по головке",
+    poke: "тыкнул тебя весело",
+    slap: "пошлёпал нежно",
+    smug: "смотрит на тебя с самодовольной улыбкой",
+    tickle: "щекотал до слёз",
+    wink: "подмигнул игриво"
+  };
+  return reactionTexts[category] || category;
+}
